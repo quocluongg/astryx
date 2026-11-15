@@ -176,11 +176,7 @@ export default function ReportPage() {
             role="complementary"
             style={railPanel}>
             <VStack gap={6}>
-              <Outline
-                items={SECTIONS}
-                activeId={activeId}
-                onActiveIdChange={setActiveId}
-              />
+              <Outline items={SECTIONS} onActiveIdChange={setActiveId} />
               <Divider />
               {related}
               {reviewers}

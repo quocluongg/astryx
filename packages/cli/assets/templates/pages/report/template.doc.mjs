@@ -17,4 +17,9 @@ export const doc = {
   ],
   isReady: false,
   category: 'Content - Report',
+  icons: {
+    ArrowDownTrayIcon: 'download',
+    DocumentTextIcon: 'document',
+    ShareIcon: 'share',
+  },
 };
