@@ -645,6 +645,9 @@ export const CommandDocKindSchema = z
               .optional(),
             cliOnly: z.boolean().optional(),
             requires: z.array(BaseStepSchema).optional(),
+            names: z
+              .enum(['component', 'hook', 'topic', 'template', 'theme'])
+              .optional(),
           })
           .passthrough(),
       )

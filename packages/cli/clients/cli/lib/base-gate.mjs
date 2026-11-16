@@ -10,7 +10,11 @@
  */
 
 import {Help} from 'commander';
-import {runBase} from '../../../foundation/bases/resolve.mjs';
+import {requestedBase, runBase} from '../../../foundation/bases/resolve.mjs';
+import {
+  formatCliCommand,
+  quoteCommandArgument,
+} from '../../../foundation/env/package-manager.mjs';
 import {
   checkRequirements,
   isAvailable,
@@ -263,10 +267,51 @@ function givenOptions(cmd) {
 /**
  * Refuse a run whose base resolution failed, before any work.
  * @param {{code: string, message: string}} failure
+ * @param {Command} [cmd] the command that runs, for a suggestion
  * @returns {never}
  */
-function refuseResolution(failure) {
-  return cliError(failure.message, {code: failure.code});
+function refuseResolution(failure, cmd) {
+  const suggestions =
+    failure.code === ERROR_CODES.ERR_BASE_NOT_FOUND && cmd != null
+      ? baseAsOption(cmd)
+      : undefined;
+  return cliError(failure.message, {code: failure.code, suggestions});
+}
+
+/**
+ * The run as meant when `--base` names no installed package and the command
+ * has an option whose value names an item, such as the theme editor's
+ * `--like <theme>`: the same words, with the `--base` value given to that
+ * option.
+ * @param {Command} cmd the command that runs
+ * @returns {Array<{name: string, reason: string}> | undefined}
+ */
+function baseAsOption(cmd) {
+  const value = requestedBase();
+  const option = (commandDocsOf(cmd)?.doc.options ?? []).find(o => o.names);
+  if (value == null || option == null) return undefined;
+  const long = longFlag(option.flag);
+  if (long == null) return undefined;
+  const words = process.argv.slice(2);
+  const at = words.findIndex(w => w === '--base' || w.startsWith('--base='));
+  if (at < 0) return undefined;
+  const width = words[at] === '--base' ? 2 : 1;
+  // A suggested run is printed without the output mode, as every refusal's
+  // lines are.
+  const meant = [
+    ...words.slice(0, at),
+    long,
+    value,
+    ...words.slice(at + width),
+  ].filter(w => w !== '--json');
+  return [
+    {
+      name: formatCliCommand(
+        ['astryx', ...meant.map(w => quoteCommandArgument(w))].join(' '),
+      ),
+      reason: `if ${value} is a ${option.names}, ${long} takes it`,
+    },
+  ];
 }
 
 /**
@@ -348,7 +393,7 @@ export async function checkRun(program, actionCommand) {
   const doc = commandDocsOf(actionCommand)?.doc;
   if (refusesHereFirst(doc, process.cwd())) return;
   const resolution = runBase();
-  if (!resolution.ok) refuseResolution(resolution);
+  if (!resolution.ok) refuseResolution(resolution, actionCommand);
   const base = /** @type {ActiveBase} */ (resolution.base);
   if (base.core) return;
   // A group none of whose commands the base serves is a hidden name too.

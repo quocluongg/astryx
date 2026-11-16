@@ -153,6 +153,12 @@ export const doc = {
           description:
             'True for CLI-only flags with no function param (e.g. --verbose). Nothing reads it.',
         },
+        {
+          name: 'options[].names',
+          type: "'component' | 'hook' | 'topic' | 'template' | 'theme'",
+          description:
+            'The kind of item the option\'s value names, such as `theme` for `--like <theme>`. A run whose `--base` names no installed package suggests the same run with that value given to this option instead.',
+        },
       ],
     },
     {

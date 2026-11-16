@@ -51,6 +51,10 @@ export interface CommandOptionDoc {
   /** Steps this option cannot run without. Help hides the option on a base
    *  that does not serve them, and a run that gives it refuses. */
   requires?: BaseStep[];
+  /** The kind of item this option's value names, such as `theme` for
+   *  `--like <theme>`. A run whose `--base` names no installed package
+   *  suggests the same run with that value given to this option instead. */
+  names?: 'component' | 'hook' | 'topic' | 'template' | 'theme';
 }
 
 /**
