@@ -793,7 +793,6 @@
     "/templates/payment-form/",
     "/templates/product-detail/",
     "/templates/product-gallery/",
-    "/templates/report/",
     "/templates/settings-dialog/",
     "/templates/settings-sidebar/",
     "/templates/settings/",
@@ -859,6 +858,7 @@
     "/templates/useTruncationHookUsage/",
     "/templates/useTypeaheadHookUsage/",
     "/templates/work-item-detail/",
+    "/templates/written-report/",
     "/themes/",
     "/tools/"
   ]

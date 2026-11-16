@@ -5647,11 +5647,6 @@
       "aliases": []
     },
     {
-      "name": "template-report",
-      "path": "templates/report",
-      "aliases": []
-    },
-    {
       "name": "template-settings",
       "path": "templates/settings",
       "aliases": []
@@ -5734,6 +5729,11 @@
     {
       "name": "template-work-item-detail",
       "path": "templates/work-item-detail",
+      "aliases": []
+    },
+    {
+      "name": "template-written-report",
+      "path": "templates/written-report",
       "aliases": []
     }
   ]

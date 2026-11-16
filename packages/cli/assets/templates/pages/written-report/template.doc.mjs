@@ -3,8 +3,8 @@
 /** @type {import('@astryxdesign/cli/authoring').TemplateDoc} */
 export const doc = {
   type: 'page',
-  name: 'Report',
-  displayName: 'Report',
+  name: 'Written report',
+  displayName: 'Written report',
   description:
     'One written document read top to bottom: a header with status, authors and document controls, a summary with key facts, prose sections with a quoted decision and a comparison table, and a section outline in the rail.',
   keywords: [

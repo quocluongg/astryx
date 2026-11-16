@@ -98,8 +98,6 @@ export const TEMPLATE_LOADERS: Record<string, () => Promise<TemplateModule>> = {
     import('../../../../packages/cli/assets/templates/pages/product-detail/page'),
   'product-gallery': () =>
     import('../../../../packages/cli/assets/templates/pages/product-gallery/page'),
-  report: () =>
-    import('../../../../packages/cli/assets/templates/pages/report/page'),
   settings: () =>
     import('../../../../packages/cli/assets/templates/pages/settings/page'),
   'settings-dialog': () =>
@@ -133,6 +131,8 @@ export const TEMPLATE_LOADERS: Record<string, () => Promise<TemplateModule>> = {
   'work-item-detail': () =>
     import('../../../../packages/cli/assets/templates/pages/work-item-detail/page'),
 };
+  'written-report': () =>
+    import('../../../../packages/cli/assets/templates/pages/written-report/page'),
 
 export const TEMPLATE_COMPONENTS: Record<
   string,
