@@ -59,24 +59,14 @@ import {
   getCliInvocation,
   quoteCommandArgument,
 } from '../../../foundation/env/package-manager.mjs';
-
-/**
- * Fully-qualified name of a command relative to the root program, e.g.
- * `theme build`. The root itself is ''.
- * @param {import('commander').Command} cmd
- * @returns {string}
- */
-function fullNameOf(cmd) {
-  /** @type {string[]} */
-  const parts = [];
-  /** @type {any} */
-  let node = cmd;
-  while (node?.parent) {
-    parts.unshift(node.name());
-    node = node.parent;
-  }
-  return parts.join(' ');
-}
+import {
+  commandAvailable,
+  helpBase,
+  optionAvailable,
+  servedHelpDescription,
+  servedHelpOptionDescription,
+} from './base-gate.mjs';
+import {commandPath} from './command-path.mjs';
 
 /**
  * Cheap argv check used before preAction has had a chance to engage
@@ -111,10 +101,11 @@ export function buildHelpEnvelope(cmd) {
     c = c.parent;
   }
 
+  const base = helpBase();
   /** @type {Array<{flags: string, description: string, defaultValue?: unknown, choices?: string[]}>} */
-  const options = cmd.options.map(o => {
+  const options = cmd.options.filter(o => optionAvailable(cmd, o, base)).map(o => {
     /** @type {any} */
-    const opt = {flags: o.flags, description: o.description || ''};
+    const opt = {flags: o.flags, description: servedHelpOptionDescription(cmd, o) || ''};
     if (o.defaultValue !== undefined) opt.defaultValue = o.defaultValue;
     if (Array.isArray(o.argChoices) && o.argChoices.length)
       opt.choices = o.argChoices;
@@ -122,15 +113,21 @@ export function buildHelpEnvelope(cmd) {
   });
 
   const subcommands = cmd.commands
-    .filter(s => !(/** @type {any} */ (s)._hidden))
-    .map(s => ({name: s.name(), description: s.description() || ''}));
+    .filter(s => !(/** @type {any} */ (s)._hidden) && commandAvailable(s, base))
+    // Off Core, a group's listing reads its summary, as text help does: its
+    // full description can name commands the base refuses.
+    .map(s => ({
+      name: s.name(),
+      description:
+        (base != null && !base.core && s.summary()) || servedHelpDescription(s) || '',
+    }));
 
   return {
     apiVersion: API_VERSION,
     type: 'help',
     data: {
       command: nameParts.join(' '),
-      description: cmd.description() || '',
+      description: servedHelpDescription(cmd) || '',
       usage: `${nameParts.join(' ')} ${cmd.usage()}`.trim(),
       options,
       subcommands,
@@ -149,7 +146,12 @@ export function buildHelpEnvelope(cmd) {
  */
 export function buildHelpErrorEnvelope(cmd) {
   const available = cmd.commands
-    .filter(s => !(/** @type {any} */ (s)._hidden) && s.name() !== 'help')
+    .filter(
+      s =>
+        !(/** @type {any} */ (s))._hidden &&
+        s.name() !== 'help' &&
+        commandAvailable(s, helpBase()),
+    )
     .map(s => s.name());
   if (!cmd.parent) {
     // Commander dispatches `help <name>` with ['help', <name>, ...] in args.
@@ -160,7 +162,7 @@ export function buildHelpErrorEnvelope(cmd) {
       ERROR_CODES.ERR_UNKNOWN_COMMAND,
     );
   }
-  const group = fullNameOf(cmd);
+  const group = commandPath(cmd);
   return toErrorEnvelope(
     `'${group}' needs a subcommand`,
     available.map(name => ({
@@ -275,7 +277,7 @@ function applyShimRecursively(cmd) {
   // recorded against the root program instead of `theme build`.
   cmd.exitOverride(err => {
     try {
-      setCommand(fullNameOf(cmd));
+      setCommand(commandPath(cmd));
     } catch {
       // Never let recording interfere with the error path.
     }

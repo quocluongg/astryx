@@ -249,7 +249,7 @@ describe('new with several bad dial flags', () => {
   );
 
   it(
-    '--base is read as --like, with the other flags kept',
+    '--base is the global base option, not a dial of new',
     async () => {
       const r = await cli([
         ...ED,
@@ -260,14 +260,8 @@ describe('new with several bad dial flags', () => {
         '--corners',
         'round',
       ]);
-      expect(r.error).toContain('--like');
-      expect(r.suggestions[0].name).toMatch(
-        / editor new b9 --like none --corners round$/,
-      );
-      expect((await follow(r.suggestions[0].name)).error).toBeUndefined();
-      expect(settings('b9')).toContainEqual(
-        expect.objectContaining({thing: 'corners', value: 'round'}),
-      );
+      expect(r.code).toBe('ERR_BASE_NOT_FOUND');
+      expect(r.error).toContain('--base none');
     },
     T,
   );

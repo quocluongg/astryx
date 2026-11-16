@@ -16,6 +16,7 @@ import {
   formatCliCommand,
   quoteCommandArgument,
 } from '../../../foundation/env/package-manager.mjs';
+import {commandAvailable, helpBase, optionAvailable} from './base-gate.mjs';
 
 /**
  * The part of a Commander option this module reads.
@@ -59,11 +60,32 @@ function optionsInReach(cmd, keep) {
   ) {
     // Commander keeps the help option apart from the others.
     const help = /** @type {any} */ (node)._getHelpOption?.();
+    const base = helpBase();
+    const served = /** @param {OptionLike} o */ o =>
+      optionAvailable(/** @type {any} */ (node), /** @type {any} */ (o), base);
     options.push(
-      ...[...(node.options ?? []), ...(help ? [help] : [])].filter(keep),
+      ...[...(node.options ?? []), ...(help ? [help] : [])].filter(
+        o => keep(o) && served(o),
+      ),
     );
   }
   return options;
+}
+
+/**
+ * The subcommands of `cmd` that people and agents see, `help` aside: the
+ * run's base serves each one.
+ * @param {CommandLike} cmd
+ * @returns {CommandLike[]}
+ */
+function offeredSubcommands(cmd) {
+  const base = helpBase();
+  return (cmd.commands ?? []).filter(
+    c =>
+      !c._hidden &&
+      c.name() !== 'help' &&
+      commandAvailable(/** @type {any} */ (c), base),
+  );
 }
 
 /**
@@ -236,9 +258,7 @@ function runAsMeant(cmd, path, stray, message, words, offered) {
       : null;
   const name = stray.replace(/^--?/, '').split('=')[0].toLowerCase();
   const similar = /\(Did you mean (--[\w-]+)\?\)/.exec(message)?.[1] ?? null;
-  const subcommands = (cmd.commands ?? []).filter(
-    c => !c._hidden && c.name() !== 'help',
-  );
+  const subcommands = offeredSubcommands(cmd);
   const found = meant({name, value, attached}, offered, subcommands, similar);
   if (!found) return null;
   /** @param {OptionLike} o */
@@ -304,15 +324,20 @@ export function strayOptionAnswer(
       o.long !== '--help' &&
       (o.long !== '--json' || json),
   );
+  const base = helpBase();
   const own = (cmd.options ?? [])
-    .filter(o => !o.hidden && o.long && o.long !== '--help')
+    .filter(
+      o =>
+        !o.hidden &&
+        o.long &&
+        o.long !== '--help' &&
+        optionAvailable(/** @type {any} */ (cmd), /** @type {any} */ (o), base),
+    )
     .map(o => /** @type {string} */ (o.long));
   if (json && !own.includes('--json') && offered.some(o => o.long === '--json'))
     own.push('--json');
   const subcommands = path.length
-    ? (cmd.commands ?? [])
-        .filter(c => !c._hidden && c.name() !== 'help')
-        .map(c => c.name())
+    ? offeredSubcommands(cmd).map(c => c.name())
     : [];
   const label = path.length ? path.join(' ') : 'astryx';
   const takes = [
